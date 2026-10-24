@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control de entradas</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+      background: #f4f4f4;
+    }
+    h2 { color: #222; }
+    #lector {
+      max-width: 420px;
+      margin: auto;
+    }
+    #resultado {
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 420px;
+      border-radius: 12px;
+      background: white;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Control de entradas</h2>
+  <p>Apunta la cámara al QR de la entrada.</p>
+  <div id="lector"></div>
+  <div id="resultado">Esperando escaneo...</div>
+
+  <script>
+    const URL_APPS_SCRIPT =
+      "https://script.google.com/macros/s/AKfycbzEb8u9Uj4B_GoTWUPy_kYkCsD6m98T17oB1g6buMZ_0gEKg06zRJW_eofZpmoXhONGyg/exec";
+
+    let procesando = false;
+    let numeroSolicitud = 0;
+
+    function mostrar(mensaje, color) {
+      const caja = document.getElementById("resultado");
+      caja.textContent = mensaje;
+      caja.style.color = color;
+    }
+
+    function respuestaQR(respuesta) {
+      const script = document.getElementById("consultaQR");
+      if (script) script.remove();
+
+      mostrar(
+        respuesta.mensaje || "No se recibió una respuesta válida.",
+        respuesta.valida ? "green" : "red"
+      );
+
+      setTimeout(() => {
+        procesando = false;
+      }, 2500);
+    }
+
+    function escaneado(codigo) {
+      if (procesando) return;
+      procesando = true;
+      const solicitud = ++numeroSolicitud;
+
+      mostrar("Verificando entrada...", "#555");
+
+      const anterior = document.getElementById("consultaQR");
+      if (anterior) anterior.remove();
+
+      window.respuestaQR = function(respuesta) {
+        if (solicitud !== numeroSolicitud) return;
+        respuestaQR(respuesta);
+      };
+
+      const script = document.createElement("script");
+      script.id = "consultaQR";
+      script.src = URL_APPS_SCRIPT
+        + "?callback=respuestaQR"
+        + "&codigo=" + encodeURIComponent(codigo.trim())
+        + "&t=" + Date.now();
+
+      script.onerror = function() {
+        script.remove();
+        mostrar("Error de conexión. Intenta nuevamente.", "red");
+        procesando = false;
+      };
+
+      document.body.appendChild(script);
+    }
+
+    if (typeof Html5QrcodeScanner === "undefined") {
+      mostrar("No se pudo cargar el lector QR. Revisa tu conexión.", "red");
+    } else {
+      const lector = new Html5QrcodeScanner(
+        "lector",
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        false
+      );
+      lector.render(escaneado);
+    }
+  </script>
+</body>
+</html>
