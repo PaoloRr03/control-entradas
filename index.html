@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Control de entradas</title>
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,11 +15,16 @@
       margin: 20px;
       background: #f4f4f4;
     }
-    h2 { color: #222; }
+
+    h2 {
+      color: #222;
+    }
+
     #lector {
       max-width: 420px;
       margin: auto;
     }
+
     #resultado {
       margin: 20px auto;
       padding: 20px;
@@ -29,9 +36,11 @@
     }
   </style>
 </head>
+
 <body>
   <h2>Control de entradas</h2>
   <p>Apunta la cámara al QR de la entrada.</p>
+
   <div id="lector"></div>
   <div id="resultado">Esperando escaneo...</div>
 
@@ -48,7 +57,7 @@
       caja.style.color = color;
     }
 
-    function respuestaQR(respuesta) {
+    function mostrarRespuestaQR(respuesta) {
       const script = document.getElementById("consultaQR");
       if (script) script.remove();
 
@@ -57,13 +66,14 @@
         respuesta.valida ? "green" : "red"
       );
 
-      setTimeout(() => {
+      setTimeout(function() {
         procesando = false;
       }, 2500);
     }
 
     function escaneado(codigo) {
       if (procesando) return;
+
       procesando = true;
       const solicitud = ++numeroSolicitud;
 
@@ -72,15 +82,16 @@
       const anterior = document.getElementById("consultaQR");
       if (anterior) anterior.remove();
 
-      window.respuestaQR = function(respuesta) {
+      window.recibirRespuestaQR = function(respuesta) {
         if (solicitud !== numeroSolicitud) return;
-        respuestaQR(respuesta);
+        mostrarRespuestaQR(respuesta);
       };
 
       const script = document.createElement("script");
       script.id = "consultaQR";
+
       script.src = URL_APPS_SCRIPT
-        + "?callback=respuestaQR"
+        + "?callback=recibirRespuestaQR"
         + "&codigo=" + encodeURIComponent(codigo.trim())
         + "&t=" + Date.now();
 
@@ -94,13 +105,20 @@
     }
 
     if (typeof Html5QrcodeScanner === "undefined") {
-      mostrar("No se pudo cargar el lector QR. Revisa tu conexión.", "red");
+      mostrar(
+        "No se pudo cargar el lector QR. Revisa tu conexión.",
+        "red"
+      );
     } else {
       const lector = new Html5QrcodeScanner(
         "lector",
-        { fps: 10, qrbox: { width: 240, height: 240 } },
+        {
+          fps: 10,
+          qrbox: { width: 240, height: 240 }
+        },
         false
       );
+
       lector.render(escaneado);
     }
   </script>
